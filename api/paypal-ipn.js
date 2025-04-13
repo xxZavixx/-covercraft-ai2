@@ -1,9 +1,19 @@
-import { Buffer } from "buffer";
 import fs from "fs";
 import path from "path";
 import fetch from "node-fetch";
 
 const dbPath = path.join(process.cwd(), "db.json");
+
+function readDB() {
+  if (!fs.existsSync(dbPath)) {
+    return { buyers: {} };
+  }
+  return JSON.parse(fs.readFileSync(dbPath, "utf8"));
+}
+
+function writeDB(data) {
+  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -16,7 +26,7 @@ export default async function handler(req, res) {
     const verifyRes = await fetch("https://ipnpb.paypal.com/cgi-bin/webscr", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `cmd=_notify-validate&${body}`,
+      body: `cmd=_notify-validate&${body}`
     });
 
     const verifyText = await verifyRes.text();
@@ -26,59 +36,43 @@ export default async function handler(req, res) {
         payment_status,
         receiver_email,
         payer_email,
-        txn_id,
+        payer_id,
         first_name,
         last_name,
         mc_gross,
+        txn_id
       } = req.body;
 
       const isCompleted = payment_status === "Completed";
-      const isCorrectEmail = receiver_email === "xzavierharris25@gmail.com";
+      const isCorrectReceiver = receiver_email === "xzavierharris25@gmail.com";
 
-      if (isCompleted && isCorrectEmail) {
-        const email = payer_email.toLowerCase();
-
-        let db = {};
-        try {
-          const file = fs.readFileSync(dbPath, "utf8");
-          db = JSON.parse(file);
-        } catch {
-          db = { buyers: {}, transactions: {} };
-        }
+      if (isCompleted && isCorrectReceiver) {
+        const db = readDB();
 
         if (!db.buyers) db.buyers = {};
-        if (!db.transactions) db.transactions = {};
+        const email = payer_email.toLowerCase();
 
-        if (db.transactions[txn_id]) {
-          console.log("Duplicate transaction.");
-        } else {
-          db.transactions[txn_id] = {
-            email,
-            amount: mc_gross,
-            name: `${first_name} ${last_name}`,
-            timestamp: new Date().toISOString(),
-          };
+        db.buyers[email] = {
+          credits: 999, // Unlock permanently
+          payer_id,
+          payer_name: `${first_name} ${last_name}`,
+          amount: mc_gross,
+          lastPayment: new Date().toISOString(),
+          txn_id
+        };
 
-          db.buyers[email] = {
-            unlocked: true,
-            paid: mc_gross,
-            name: `${first_name} ${last_name}`,
-            lastPayment: new Date().toISOString(),
-          };
-
-          fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-          console.log(`✅ Access unlocked for ${email}`);
-        }
+        writeDB(db);
+        console.log(`✅ Purchase verified and unlocked for ${email}`);
       } else {
-        console.warn("⚠️ Payment incomplete or wrong PayPal email.");
+        console.warn("⚠️ Payment failed or incorrect receiver email.");
       }
     } else {
-      console.error("❌ IPN not verified.");
+      console.error("❌ IPN not verified by PayPal.");
     }
 
     res.status(200).end();
-  } catch (error) {
-    console.error("❌ IPN handler error:", error);
-    res.status(500).end("Internal Server Error");
+  } catch (err) {
+    console.error("❌ IPN Handler Error:", err);
+    res.status(500).end("Server error");
   }
 }
