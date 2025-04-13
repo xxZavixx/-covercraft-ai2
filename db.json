@@ -10,3 +10,11 @@
   }
 }
 
+{
+  "users": [
+    {
+      "email": "user@example.com",
+      "credits": 15
+    }
+  ]
+}
