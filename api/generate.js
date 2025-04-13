@@ -45,4 +45,4 @@ Be concise, persuasive, and professional. Format properly for a real job applica
     console.error("Claude API error:", err);
     res.status(500).json({ error: "Claude API error. Please try again later." });
   }
-}
+} 
