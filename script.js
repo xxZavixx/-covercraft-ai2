@@ -1,74 +1,87 @@
-// script.js
+document.addEventListener("DOMContentLoaded", async () => {
+  const emailInput = document.getElementById("userEmail");
+  const countMsg = document.getElementById("genCountMsg");
 
-const emailInput = document.getElementById("userEmail");
-const countMsg = document.getElementById("genCountMsg");
-const resultBox = document.getElementById("resultBox");
-
-// Default free usage limit
-const FREE_LIMIT = 2;
-
-// Check and update credits when form is submitted
-document.getElementById("coverForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const email = emailInput?.value?.trim().toLowerCase();
-  if (!email) {
-    alert("Please enter your email.");
-    return;
+  // Handle redirect from PayPal IPN
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("pro") === "1") {
+    localStorage.setItem("isProUser", "true");
+    alert("Thank you for upgrading to CoverCraft Pro!");
+    history.replaceState({}, document.title, window.location.pathname);
   }
 
-  try {
-    const res = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
+  // Initialize localStorage credit counter
+  if (!localStorage.getItem("coverTries")) {
+    localStorage.setItem("coverTries", "0");
+  }
 
-    if (!res.ok || (!data.unlocked && data.creditsLeft <= 0)) {
-      alert("You’ve used all your free credits. Please purchase to unlock full access.");
-      document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
+  // Display credit status
+  const tries = parseInt(localStorage.getItem("coverTries") || "0");
+  const isPro = localStorage.getItem("isProUser") === "true";
 
-    // Generate cover letter
-    const formData = new FormData(e.target);
-    const userInput = Object.fromEntries(formData.entries());
-    resultBox.textContent = "Generating your cover letter... Please wait.";
-
-    const generateRes = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userInput),
-    });
-
-    const generateData = await generateRes.json();
-    if (generateRes.ok && generateData.output) {
-      resultBox.textContent = generateData.output;
-
-      // Use a credit
-      await fetch("/api/use-credit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      });
-
-      updateCredits(email);
+  if (countMsg) {
+    if (isPro) {
+      countMsg.textContent = "Pro access unlocked.";
     } else {
-      resultBox.textContent = generateData.error || "Something went wrong generating your cover letter.";
+      countMsg.textContent = `${tries}/2 free uses used.`;
     }
-  } catch (error) {
-    console.error("Network error:", error);
-    resultBox.textContent = "Network error. Please try again later.";
   }
 });
 
-async function updateCredits(email) {
-  try {
-    const res = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
-    if (res.ok) {
-      countMsg.textContent = data.unlocked
-        ? "Pro Access: Unlimited"
-        : `${data.creditsLeft} free uses remaining`;
-    }
-  } catch (e) {
-    countMsg.textContent = "Could not fetch credits.";
+// Form submission handler
+document.getElementById("coverForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const emailInput = document.getElementById("userEmail");
+  const email = emailInput?.value?.trim().toLowerCase();
+
+  if (!email) {
+    alert("Please enter your email.");
+    emailInput?.focus();
+    return;
   }
-}
+
+  localStorage.setItem("userEmail", email);
+
+  const isPro = localStorage.getItem("isProUser") === "true";
+  let tries = parseInt(localStorage.getItem("coverTries") || "0");
+
+  if (!isPro && tries >= 2) {
+    alert("You've used your 2 free tries. Please purchase Pro to continue.");
+    document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  const formData = new FormData(e.target);
+  const userInput = Object.fromEntries(formData.entries());
+  const resultBox = document.getElementById("resultBox");
+  resultBox.textContent = "Generating your cover letter... Please wait.";
+
+  try {
+    const response = await fetch("/api/generate.js", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userInput)
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.output) {
+      resultBox.textContent = data.output;
+
+      if (!isPro) {
+        tries += 1;
+        localStorage.setItem("coverTries", tries.toString());
+        const countMsg = document.getElementById("genCountMsg");
+        if (countMsg) {
+          countMsg.textContent = `${tries}/2 free uses used.`;
+        }
+      }
+    } else {
+      resultBox.textContent = data.error || "Something went wrong.";
+    }
+  } catch (err) {
+    console.error("Error generating:", err);
+    resultBox.textContent = "Error contacting the AI. Try again later.";
+  }
+});
