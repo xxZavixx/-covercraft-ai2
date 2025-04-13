@@ -1,15 +1,44 @@
+// /api/use-credit.js
+
 import fs from "fs";
-const path = "./db.json";
+import path from "path";
 
-export default function handler(req, res) {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Missing email" });
+const dbPath = path.join(process.cwd(), "db.json");
 
-  const db = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
-  if (!db[email]) db[email] = { credits: 1 };
-  db[email].credits = Math.max((db[email].credits ?? 2) - 1, 0);
-  fs.writeFileSync(path, JSON.stringify(db, null, 2));
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Only POST allowed" });
+  }
 
-  res.status(200).json({ credits: db[email].credits });
+  const email = req.body.email?.trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ error: "Missing email" });
+  }
+
+  try {
+    const db = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
+
+    // Create buyer record if doesn't exist
+    if (!db.buyers[email]) {
+      db.buyers[email] = {
+        credits: 1 // since one will be subtracted below, 2 total default
+      };
+    }
+
+    const currentCredits = db.buyers[email].credits || 0;
+
+    if (currentCredits <= 0) {
+      return res.status(403).json({ error: "No credits remaining" });
+    }
+
+    db.buyers[email].credits = currentCredits - 1;
+
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+    console.log(`✅ 1 credit used for ${email}. Remaining: ${db.buyers[email].credits}`);
+
+    return res.status(200).json({ success: true, remaining: db.buyers[email].credits });
+  } catch (err) {
+    console.error("Error updating credits:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 }
-
