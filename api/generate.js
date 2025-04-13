@@ -1,9 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -11,38 +5,44 @@ export default async function handler(req, res) {
 
   const { jobTitle, company, skills, experience, tone } = req.body;
 
-  if (!jobTitle || !company || !skills || !experience) {
+  if (!jobTitle || !company || !skills || !experience || !tone) {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
-  const prompt = `
-  Generate a ${tone || "Professional"} cover letter for the following job application:
+  const prompt = `Write a ${tone.toLowerCase()} cover letter for the following job:
 
-  Job Title: ${jobTitle}
-  Company: ${company}
-  Skills: ${skills}
-  Experience: ${experience}
+Job Title: ${jobTitle}
+Company: ${company}
+Key Skills: ${skills}
+Experience: ${experience}
 
-  Only return the cover letter, nothing else.
-  `;
+Be concise, persuasive, and professional. Format properly for a real job application.`;
 
   try {
-    const completion = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 1000,
-      temperature: 0.6,
-      messages: [
-        {
-          role: "user",
-          content: prompt.trim(),
-        },
-      ],
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "claude-3-haiku-20240307",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }]
+      })
     });
 
-    const output = completion?.content?.[0]?.text || "Error: No output.";
-    res.status(200).json({ output });
+    const data = await response.json();
+    const result = data?.content?.[0]?.text?.trim();
+
+    if (!result) {
+      throw new Error("Empty response from Claude.");
+    }
+
+    res.status(200).json({ output: result });
   } catch (err) {
-    console.error("Generation error:", err);
-    res.status(500).json({ error: "Something went wrong generating your cover letter." });
+    console.error("Claude API error:", err);
+    res.status(500).json({ error: "Claude API error. Please try again later." });
   }
 }
