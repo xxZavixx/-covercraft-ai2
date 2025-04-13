@@ -1,12 +1,25 @@
-import fs from "fs";
-const path = "./db.json";
+// /api/check-credits.js
 
-export default function handler(req, res) {
-  const email = req.query.email?.toLowerCase();
+import fs from "fs";
+import path from "path";
+
+const dbPath = path.join(process.cwd(), "db.json");
+
+export default async function handler(req, res) {
+  const email = req.query.email?.trim().toLowerCase();
   if (!email) return res.status(400).json({ error: "Missing email" });
 
-  const db = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
-  const user = db[email];
-  res.status(200).json({ credits: user?.credits ?? 2 });
-}
+  try {
+    const db = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
 
+    const user = db.buyers?.[email];
+
+    // Default to 2 free credits if not found
+    const credits = user ? user.credits || 0 : 2;
+
+    return res.status(200).json({ credits });
+  } catch (err) {
+    console.error("Error reading db.json:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
