@@ -24,7 +24,7 @@ Be concise, persuasive, and professional. Format properly for a real job applica
       headers: {
         "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "claude-3-haiku-20240307",
@@ -34,15 +34,15 @@ Be concise, persuasive, and professional. Format properly for a real job applica
     });
 
     const data = await response.json();
-    const result = data?.content?.[0]?.text?.trim();
+    const output = data?.content?.[0]?.text?.trim();
 
-    if (!result) {
-      throw new Error("Empty response from Claude.");
+    if (!output) {
+      return res.status(500).json({ error: "Claude returned no content." });
     }
 
-    res.status(200).json({ output: result });
+    return res.status(200).json({ output });
   } catch (err) {
     console.error("Claude API error:", err);
-    res.status(500).json({ error: "Claude API error. Please try again later." });
+    return res.status(500).json({ error: "Claude API error. Please try again later." });
   }
-} 
+}
