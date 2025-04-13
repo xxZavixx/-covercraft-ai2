@@ -68,32 +68,10 @@
   </section>
 
   <!-- PayPal Upgrade -->
-  <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded mb-10 text-center">
+  <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded mb-20 text-center">
     <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
-    <p class="text-gray-600 mb-4">Pay $7.99 to unlock 15 additional cover letter generations.</p>
+    <p class="text-gray-600 mb-4">Pay $7.99 to unlock unlimited cover letter generations.</p>
     <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
-  </section>
-
-  <!-- Manual Unlock (email lookup) -->
-  <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded text-center mb-20">
-    <h3 class="text-lg font-semibold text-gray-800 mb-2">Already paid?</h3>
-    <p class="text-sm text-gray-600 mb-4">Enter your PayPal email to restore your 15 credits.</p>
-    <form id="emailUnlockForm" class="flex flex-col sm:flex-row gap-2 justify-center items-center">
-      <input
-        type="email"
-        name="email"
-        placeholder="your@email.com"
-        class="border px-4 py-2 rounded w-full sm:w-64"
-        required
-      />
-      <button
-        type="submit"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
-      >
-        Unlock
-      </button>
-    </form>
-    <p id="unlockStatus" class="text-sm mt-2 text-gray-500"></p>
   </section>
 
   <!-- Footer -->
@@ -103,31 +81,25 @@
 
   <!-- PayPal SDK -->
   <script 
-    src="https://www.paypal.com/sdk/js?client-id=BAATQiPmuhLKaFHU6RF1Vo-Nx70khENMgh886dQZKOoGHHrXLfAMzZ3dP7TJVHARfJqC9FSVnCno0MbKbI&components=hosted-buttons&enable-funding=venmo&currency=USD"
+    src="https://www.paypal.com/sdk/js?client-id=BAATQiPmuhLKaFHU6RF1Vo-Nx70khENMgh886dQZKOoGHHrXLfAMzZ3dP7TJVHARfJqC9FSVnCno0MbKbI&components=hosted-buttons&currency=USD"
     onload="paypal.HostedButtons({ hostedButtonId: '2S7SD3LJNS3VW' }).render('#paypal-container-2S7SD3LJNS3VW');">
   </script>
 
-  <!-- Main script -->
   <script src="script.js"></script>
 
-  <!-- Utility functions -->
   <script>
     function copyToClipboard() {
       const text = document.getElementById("resultBox").textContent;
-      if (!text || text.trim() === "Fill out the form above and click generate!") {
-        alert("Nothing to copy yet.");
+      if (!text || text.includes("Fill out the form")) {
+        alert("Nothing to copy.");
         return;
       }
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Copied to clipboard!");
-      }).catch(() => {
-        alert("Copy failed. Try again.");
-      });
+      navigator.clipboard.writeText(text).then(() => alert("Copied!"));
     }
 
     async function downloadPDF() {
       const content = document.getElementById("resultBox").textContent;
-      if (!content || content.trim() === "Fill out the form above and click generate!") {
+      if (!content || content.includes("Fill out the form")) {
         alert("Nothing to download.");
         return;
       }
