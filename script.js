@@ -11,26 +11,26 @@ document.addEventListener("DOMContentLoaded", () => {
     emailInput.value = storedEmail;
   }
 
-  // Show access message
-  if (countMsg) {
-    countMsg.textContent = isProUser
-      ? "Pro access unlocked."
-      : `${freeCount}/2 free uses used.`;
+  // Display access info
+  if (isProUser) {
+    countMsg.textContent = "Pro access unlocked.";
+  } else {
+    countMsg.textContent = `${freeCount}/2 free uses used.`;
   }
 
-  // Lemon Squeezy post-purchase message listener
+  // Listen for Lemon Squeezy purchase event
   window.addEventListener("message", (event) => {
     if (event.origin !== "https://app.lemonsqueezy.com") return;
-
-    if (event.data?.type === "lemon.success") {
+    if (event.data && event.data.type === "lemon.success") {
       localStorage.setItem("isProUser", "true");
       localStorage.setItem("freeCount", "0");
       if (countMsg) countMsg.textContent = "Pro access unlocked.";
-      alert("Thank you for subscribing to CoverCraft Pro!");
+      alert("Thanks for subscribing to CoverCraft Pro!");
     }
   });
 });
 
+// Form submission
 document.getElementById("coverForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -50,16 +50,15 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
   const isProUser = localStorage.getItem("isProUser") === "true";
   let freeCount = parseInt(localStorage.getItem("freeCount") || "0");
 
-  // Check usage limit
+  // Free limit enforcement
   if (!isProUser && freeCount >= 2) {
-    alert("You've used all your free generations. Subscribe to unlock more!");
+    alert("You've used all your free generations. Please subscribe.");
     document.querySelector(".lemonsqueezy-button")?.scrollIntoView({ behavior: "smooth" });
     return;
   }
 
   const formData = new FormData(e.target);
   const userInput = Object.fromEntries(formData.entries());
-
   resultBox.textContent = "Generating your cover letter... Please wait.";
 
   try {
@@ -74,19 +73,19 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     if (response.ok && data.output) {
       resultBox.textContent = data.output;
 
-      // Increment usage
+      // Track usage
       if (!isProUser) {
         freeCount++;
         localStorage.setItem("freeCount", freeCount.toString());
-        if (countMsg) countMsg.textContent = `${freeCount}/2 free uses used.`;
+        countMsg.textContent = `${freeCount}/2 free uses used.`;
       } else {
-        if (countMsg) countMsg.textContent = "Pro access unlocked.";
+        countMsg.textContent = "Pro access unlocked.";
       }
     } else {
       resultBox.textContent = data.error || "Something went wrong.";
     }
   } catch (err) {
-    console.error("Error:", err);
+    console.error("Error generating letter:", err);
     resultBox.textContent = "Network error. Please try again later.";
   }
 });
