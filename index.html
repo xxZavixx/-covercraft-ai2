@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CoverCraft AI - Instant Cover Letters</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
 
+  <main class="max-w-2xl mx-auto mt-20 bg-white p-6 rounded shadow">
+    <h1 class="text-3xl font-bold mb-4 text-blue-700 text-center">CoverCraft AI</h1>
+    <form id="coverForm" class="space-y-4">
+      <input type="email" name="email" id="userEmail" placeholder="Your Email" class="w-full border px-4 py-2 rounded" required />
+      <input name="jobTitle" placeholder="Job Title" class="w-full border px-4 py-2 rounded" required />
+      <input name="company" placeholder="Company Name" class="w-full border px-4 py-2 rounded" required />
+      <textarea name="skills" placeholder="Skills (comma-separated)" class="w-full border px-4 py-2 rounded" required></textarea>
+      <textarea name="experience" placeholder="Experience or Resume" class="w-full border px-4 py-2 rounded" required></textarea>
+      <select name="tone" class="w-full border px-4 py-2 rounded">
+        <option value="Professional">Professional</option>
+        <option value="Friendly">Friendly</option>
+        <option value="Creative">Creative</option>
+      </select>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Generate</button>
+      <p class="text-center text-sm text-gray-600" id="genCountMsg">Checking credits...</p>
+    </form>
+
+    <pre id="resultBox" class="mt-6 bg-gray-100 p-4 rounded whitespace-pre-wrap text-sm">Fill out the form above and click generate!</pre>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
