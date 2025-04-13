@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script async src="https://app.lemonsqueezy.com/js/lemon.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -28,7 +27,7 @@
 
     <div class="mb-4">
       <label for="userEmail" class="block text-sm font-medium text-gray-700 mb-1">
-        Your Email (for free & subscription access)
+        Your Email (for free & paid access)
       </label>
       <input
         type="email"
@@ -68,17 +67,13 @@
     </div>
   </section>
 
-  <!-- Lemon Squeezy Upgrade -->
+  <!-- Lemon Squeezy Subscription -->
   <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded mb-20 text-center">
-    <h3 class="text-xl font-semibold mb-2 text-gray-800">Want Unlimited Access?</h3>
-    <p class="text-gray-600 mb-4">Subscribe for $7.99 and get 15 days of unlimited cover letter generations.</p>
-    <button
-      class="lemonsqueezy-button bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded"
-      data-lemonsqueezy="true"
-      data-product="489181"
-    >
-      Subscribe with Lemon Squeezy
-    </button>
+    <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
+    <p class="text-gray-600 mb-4">Subscribe for just $7.99 and unlock unlimited generations for 15 days.</p>
+    <a href="https://covercraftai.lemonsqueezy.com/buy/33661f1f-6cbb-43a4-88b5-1323ef3771e3?embed=1" class="lemonsqueezy-button bg-blue-600 text-white px-6 py-3 rounded font-semibold hover:bg-blue-700">
+      Buy CoverCraft Pro – 15-Day Subscription
+    </a>
   </section>
 
   <!-- Footer -->
@@ -86,10 +81,13 @@
     Built by <a href="https://cryptobroski.xyz" class="text-blue-600 hover:underline">CryptoBroski</a> | CoverCraft AI &copy; 2025
   </footer>
 
-  <!-- script.js -->
+  <!-- Lemon Squeezy Script -->
+  <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
+
+  <!-- Main script -->
   <script src="script.js"></script>
 
-  <!-- Copy & PDF -->
+  <!-- Utility Functions -->
   <script>
     function copyToClipboard() {
       const text = document.getElementById("resultBox").textContent;
