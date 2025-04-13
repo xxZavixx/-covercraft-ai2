@@ -1,42 +1,100 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const emailInput = document.getElementById("userEmail");
-  const genCountMsg = document.getElementById("genCountMsg");
-  const storedEmail = localStorage.getItem("userEmail");
-
-  if (storedEmail && emailInput) {
-    emailInput.value = storedEmail;
-    const res = await fetch(`/api/check-credits?email=${storedEmail}`);
-    const data = await res.json();
-    if (res.ok) genCountMsg.textContent = `${data.credits} credits remaining.`;
-  }
-});
+// script.js
 
 document.getElementById("coverForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-  const email = form.email.value.trim().toLowerCase();
-  localStorage.setItem("userEmail", email);
 
-  const resCheck = await fetch(`/api/check-credits?email=${email}`);
-  const { credits } = await resCheck.json();
-  if (credits <= 0) return alert("Out of credits. Please pay to continue.");
-
+  const emailInput = document.getElementById("userEmail");
+  const email = emailInput?.value?.trim().toLowerCase();
   const resultBox = document.getElementById("resultBox");
-  resultBox.textContent = "Generating your cover letter...";
+  const countMsg = document.getElementById("genCountMsg");
 
-  const body = JSON.stringify(Object.fromEntries(new FormData(form)));
-  const response = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-  });
+  if (!email) {
+    alert("Please enter your email.");
+    emailInput?.focus();
+    return;
+  }
 
-  const data = await response.json();
-  resultBox.textContent = data.output || "Error generating letter.";
+  // Step 1: Check credits
+  countMsg.textContent = "Checking credits...";
+  try {
+    const checkRes = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+    const creditData = await checkRes.json();
 
-  await fetch("/api/use-credit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email })
-  });
+    if (!checkRes.ok || creditData.credits <= 0) {
+      alert("You’ve used all your free or purchased credits. Please buy more.");
+      document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+  } catch (err) {
+    console.error("Credit check error:", err);
+    resultBox.textContent = "Error checking credits. Try again later.";
+    return;
+  }
+
+  // Step 2: Submit form data
+  const formData = new FormData(e.target);
+  const userInput = Object.fromEntries(formData.entries());
+  resultBox.textContent = "Generating your cover letter... Please wait.";
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userInput)
+    });
+    const data = await res.json();
+
+    if (res.ok && data.output) {
+      resultBox.textContent = data.output;
+
+      // Step 3: Consume 1 credit
+      await fetch("/api/use-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+
+      // Step 4: Update remaining credits
+      const updateRes = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+      const updateData = await updateRes.json();
+      if (updateRes.ok) {
+        countMsg.textContent = `${updateData.credits} credits remaining.`;
+      }
+    } else {
+      resultBox.textContent = data.error || "Something went wrong.";
+    }
+  } catch (error) {
+    console.error("API Error:", error);
+    resultBox.textContent = "Network error. Try again later.";
+  }
 });
+
+// Email unlock button
+const emailUnlockForm = document.getElementById("emailUnlockForm");
+if (emailUnlockForm) {
+  emailUnlockForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = e.target.email.value.trim().toLowerCase();
+    const status = document.getElementById("unlockStatus");
+    if (!email) {
+      status.textContent = "Please enter a valid email.";
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+
+      if (res.ok && data.credits > 0) {
+        document.getElementById("userEmail").value = email;
+        status.textContent = "✅ Access restored.";
+        document.getElementById("genCountMsg").textContent = `${data.credits} credits remaining.`;
+      } else {
+        status.textContent = "❌ No credits found for this email.";
+      }
+    } catch (error) {
+      console.error(error);
+      status.textContent = "❌ Error checking credits.";
+    }
+  });
+}
