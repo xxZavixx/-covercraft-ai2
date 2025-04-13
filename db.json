@@ -1,19 +1,9 @@
 {
   "buyers": {
-    "test@example.com": {
-      "credits": 15,
-      "payer_id": "EXAMPLE123",
-      "payer_name": "Test User",
-      "amount": "7.99",
-      "lastPayment": "2025-04-12T00:00:00.000Z"
-    }
-  },
-  "transactions": {
-    "EXAMPLETXNID123": {
-      "email": "test@example.com",
-      "amount": "7.99",
+    "example@email.com": {
+      "unlocked": true,
+      "txn_id": "ABC123456789",
       "timestamp": "2025-04-12T00:00:00.000Z"
     }
   }
 }
-
