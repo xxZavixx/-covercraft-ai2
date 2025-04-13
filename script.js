@@ -6,27 +6,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const isProUser = localStorage.getItem("isProUser") === "true";
   let freeCount = parseInt(localStorage.getItem("freeCount") || "0");
 
-  // Pre-fill email if stored
+  // Pre-fill email
   if (storedEmail && emailInput) {
     emailInput.value = storedEmail;
   }
 
   // Show access message
-  if (isProUser) {
-    countMsg.textContent = "Pro access unlocked.";
-  } else {
-    countMsg.textContent = `${freeCount}/2 free uses used.`;
+  if (countMsg) {
+    countMsg.textContent = isProUser
+      ? "Pro access unlocked."
+      : `${freeCount}/2 free uses used.`;
   }
 
-  // Listen for Lemon Squeezy purchase event
+  // Lemon Squeezy post-purchase message listener
   window.addEventListener("message", (event) => {
     if (event.origin !== "https://app.lemonsqueezy.com") return;
 
-    if (event.data && event.data.type === "lemon.success") {
-      // Unlock pro access
+    if (event.data?.type === "lemon.success") {
       localStorage.setItem("isProUser", "true");
       localStorage.setItem("freeCount", "0");
-      countMsg.textContent = "Pro access unlocked.";
+      if (countMsg) countMsg.textContent = "Pro access unlocked.";
       alert("Thank you for subscribing to CoverCraft Pro!");
     }
   });
@@ -51,7 +50,7 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
   const isProUser = localStorage.getItem("isProUser") === "true";
   let freeCount = parseInt(localStorage.getItem("freeCount") || "0");
 
-  // Free limit check
+  // Check usage limit
   if (!isProUser && freeCount >= 2) {
     alert("You've used all your free generations. Subscribe to unlock more!");
     document.querySelector(".lemonsqueezy-button")?.scrollIntoView({ behavior: "smooth" });
@@ -67,7 +66,7 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     const response = await fetch("/api/generate.js", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userInput)
+      body: JSON.stringify(userInput),
     });
 
     const data = await response.json();
@@ -75,13 +74,13 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     if (response.ok && data.output) {
       resultBox.textContent = data.output;
 
-      // Track usage
+      // Increment usage
       if (!isProUser) {
         freeCount++;
         localStorage.setItem("freeCount", freeCount.toString());
-        countMsg.textContent = `${freeCount}/2 free uses used.`;
+        if (countMsg) countMsg.textContent = `${freeCount}/2 free uses used.`;
       } else {
-        countMsg.textContent = "Pro access unlocked.";
+        if (countMsg) countMsg.textContent = "Pro access unlocked.";
       }
     } else {
       resultBox.textContent = data.error || "Something went wrong.";
